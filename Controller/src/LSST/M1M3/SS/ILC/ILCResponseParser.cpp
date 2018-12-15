@@ -573,6 +573,7 @@ void ILCResponseParser::parseStepMotorResponse(ModbusBuffer* buffer, ILCMap map,
 	this->hardpointActuatorData->MeasuredForce[dataIndex] = buffer->readSGL();
 	this->hardpointActuatorData->Displacement[dataIndex] = (this->hardpointActuatorData->Encoder[dataIndex] * this->hardpointActuatorSettings->MicrometersPerEncoder) / (MICROMETERS_PER_MILLIMETER * MILLIMETERS_PER_METER);
 	buffer->skipToNextFrame();
+	this->checkHardpointActuatorMeasuredForce(dataIndex);
 }
 
 void ILCResponseParser::parseElectromechanicalForceAndStatusResponse(ModbusBuffer* buffer, ILCMap map) {
@@ -599,6 +600,7 @@ void ILCResponseParser::parseElectromechanicalForceAndStatusResponse(ModbusBuffe
 	this->hardpointActuatorData->MeasuredForce[dataIndex] = -buffer->readSGL();
 	this->hardpointActuatorData->Displacement[dataIndex] = (this->hardpointActuatorData->Encoder[dataIndex] * this->hardpointActuatorSettings->MicrometersPerEncoder) / (MICROMETERS_PER_MILLIMETER * MILLIMETERS_PER_METER);
 	buffer->skipToNextFrame();
+	this->checkHardpointActuatorMeasuredForce(dataIndex);
 }
 
 void ILCResponseParser::parseSetBoostValveDCAGainsResponse(ModbusBuffer* buffer, ILCMap map) {
@@ -839,6 +841,7 @@ void ILCResponseParser::parseReadHMPressureValuesResponse(ModbusBuffer* buffer, 
 	this->hardpointMonitorData->PressureSensor3[dataIndex] = buffer->readSGL();
 	this->hardpointMonitorData->BreakawayPressure[dataIndex] = buffer->readSGL();
 	buffer->skipToNextFrame();
+	this->checkHardpointActuatorAirPressure(dataIndex);
 }
 
 void ILCResponseParser::parseReportDCAIDResponse(ModbusBuffer* buffer, ILCMap map) {
@@ -949,21 +952,49 @@ void ILCResponseParser::checkForceActuatorFollowingError(ILCMap map) {
 	bool previousPrimaryWarning = this->forceWarning->PrimaryAxisFollowingErrorWarning[dataIndex];
 	this->forceWarning->PrimaryAxisFollowingErrorWarning[dataIndex] = primaryLimitWarning;
 	bool anyChange = primaryLimitWarning != previousPrimaryWarning;
+	bool secondaryLimitWarning = false;
 
 	if (secondaryDataIndex != -1) {
 		float secondaryForce = this->forceActuatorData->SecondaryCylinderForce[secondaryDataIndex];
 		float secondarySetpoint = this->appliedCylinderForces->SecondaryCylinderForces[secondaryDataIndex] / 1000.0;
 		float secondaryLimit = this->forceActuatorSettings->FollowingErrorSecondaryCylinderLimitTable[secondaryDataIndex].HighFault;
 		float secondaryFollowingError = secondaryForce - secondarySetpoint;
-		bool secondaryLimitWarning = std::abs(secondaryFollowingError) > secondaryLimit;
+		secondaryLimitWarning = std::abs(secondaryFollowingError) > secondaryLimit;
 		bool previousSecondaryWarning = this->forceWarning->SecondaryAxisFollowingErrorWarning[dataIndex];
 		this->forceWarning->SecondaryAxisFollowingErrorWarning[dataIndex] = secondaryLimitWarning;
 		anyChange = anyChange || secondaryLimitWarning != previousSecondaryWarning;
 	}
 
+	this->safetyController->forceActuatorFollowingError(dataIndex, primaryLimitWarning || secondaryLimitWarning);
+
 	if (anyChange) {
 		this->publishForceActuatorForceWarning();
 	}
+}
+
+void ILCResponseParser::checkHardpointActuatorMeasuredForce(int32_t actuatorId) {
+	float measuredForce = this->hardpointActuatorData->MeasuredForce[actuatorId];
+	float loadCellMax = this->hardpointActuatorSettings->HardpointMeasuredForceFaultHigh;
+	float loadCellMin = this->hardpointActuatorSettings->HardpointMeasuredForceFaultLow;
+	bool loadCellError = measuredForce > loadCellMax || measuredForce < loadCellMin;
+	this->safetyController->hardpointActuatorLoadCellError(loadCellError);
+
+	float max = this->hardpointActuatorSettings->HardpointMeasuredForceWarningHigh;
+	float min = this->hardpointActuatorSettings->HardpointMeasuredForceWarningLow;
+	if (this->forceActuatorState->BalanceForcesApplied) {
+		max = this->hardpointActuatorSettings->HardpointMeasuredForceFSBWarningHigh;
+		min = this->hardpointActuatorSettings->HardpointMeasuredForceFSBWarningLow;
+	}
+	bool measuredForceError = measuredForce > max || measuredForce < min;
+	this->safetyController->hardpointActuatorMeasuredForce(actuatorId, measuredForceError);
+}
+
+void ILCResponseParser::checkHardpointActuatorAirPressure(int32_t actuatorId) {
+	float airPressure = this->hardpointMonitorData->BreakawayPressure[actuatorId];
+	float min = this->hardpointActuatorSettings->AirPressureWarningHigh;
+	float max = this->hardpointActuatorSettings->AirPressureWarningLow;
+	bool loadCellError = airPressure > max || airPressure < min;
+	this->safetyController->hardpointActuatorAirPressure(actuatorId, loadCellError);
 }
 
 void ILCResponseParser::publishForceActuatorForceWarning() {

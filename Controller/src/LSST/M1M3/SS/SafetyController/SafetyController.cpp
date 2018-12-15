@@ -27,6 +27,21 @@ SafetyController::SafetyController(M1M3SSPublisher* publisher, SafetyControllerS
 	for(int i = 0; i < this->safetyControllerSettings->ILC.CommunicationTimeoutPeriod; ++i) {
 		this->ilcCommunicationTimeoutData.push_back(0);
 	}
+	for(int i = 0; i < this->safetyControllerSettings->ILC.ForceActuatorFollowingErrorPeriod; ++i) {
+		for(int j = 0; j < 156; ++j) {
+			this->forceActuatorFollowingErrorData[j].push_back(0);
+		}
+	}
+	for(int i = 0; i < this->safetyControllerSettings->ILC.HardpointActuatorMeasuredForcePeriod; ++i) {
+		for(int j = 0; j < 6; ++j) {
+			this->hardpointActuatorMeasuredForceData[j].push_back(0);
+		}
+	}
+	for(int i = 0; i < this->safetyControllerSettings->ILC.AirPressurePeriod; ++i) {
+		for(int j = 0; j < 6; ++j) {
+			this->hardpointActuatorAirPressureData[j].push_back(0);
+		}
+	}
 }
 
 void SafetyController::clearErrorCode() {
@@ -107,7 +122,7 @@ void SafetyController::powerControllerNotifyAuxPowerNetworkDOutputMismatch(bool 
 
 void SafetyController::raiseOperationTimeout(bool conditionFlag) { this->updateOverride(FaultCodes::RaiseOperationTimeout, this->safetyControllerSettings->RaiseOperation.FaultOnTimeout, conditionFlag); }
 
-void SafetyController::lowerOperationTimeout(bool conditionFlag) { this->updateOverride(FaultCodes::RaiseOperationTimeout, this->safetyControllerSettings->LowerOperation.FaultOnTimeout, conditionFlag); }
+void SafetyController::lowerOperationTimeout(bool conditionFlag) { this->updateOverride(FaultCodes::LowerOperationTimeout, this->safetyControllerSettings->LowerOperation.FaultOnTimeout, conditionFlag); }
 
 void SafetyController::ilcCommunicationTimeout(bool conditionFlag) {
 	this->ilcCommunicationTimeoutData.pop_front();
@@ -117,6 +132,36 @@ void SafetyController::ilcCommunicationTimeout(bool conditionFlag) {
 		sum += (*i);
 	}
 	this->updateOverride(FaultCodes::ILCCommunicationTimeout, this->safetyControllerSettings->ILC.FaultOnCommunicationTimeout, sum >= this->safetyControllerSettings->ILC.CommunicationTimeoutCountThreshold);
+}
+
+void SafetyController::forceActuatorFollowingError(int actuatorDataIndex, bool conditionFlag) {
+	this->forceActuatorFollowingErrorData[actuatorDataIndex].pop_front();
+	this->forceActuatorFollowingErrorData[actuatorDataIndex].push_back(conditionFlag ? 1 : 0);
+	int sum = 0;
+	for(std::list<int>::iterator i = this->forceActuatorFollowingErrorData[actuatorDataIndex].begin(); i != this->forceActuatorFollowingErrorData[actuatorDataIndex].end(); ++i) {
+		sum += (*i);
+	}
+	this->updateOverride(FaultCodes::ForceActuatorFollowingError, this->safetyControllerSettings->ILC.FaultOnForceActuatorFollowingError, sum >= this->safetyControllerSettings->ILC.ForceActuatorFollowingErrorCountThreshold);
+}
+
+void SafetyController::hardpointActuatorLoadCellError(bool conditionFlag) { this->updateOverride(FaultCodes::HardpointActuatorLoadCellError, this->safetyControllerSettings->ILC.FaultOnHardpointActuatorLoadCellError, conditionFlag); }
+void SafetyController::hardpointActuatorMeasuredForce(int actuatorDataIndex, bool conditionFlag) {
+	this->hardpointActuatorMeasuredForceData[actuatorDataIndex].pop_front();
+	this->hardpointActuatorMeasuredForceData[actuatorDataIndex].push_back(conditionFlag ? 1 : 0);
+	int sum = 0;
+	for(std::list<int>::iterator i = this->hardpointActuatorMeasuredForceData[actuatorDataIndex].begin(); i != this->hardpointActuatorMeasuredForceData[actuatorDataIndex].end(); ++i) {
+		sum += (*i);
+	}
+	this->updateOverride(FaultCodes::HardpointActuatorMeasuredForceError, this->safetyControllerSettings->ILC.FaultOnHardpointActuatorMeasuredForce, sum >= this->safetyControllerSettings->ILC.HardpointActuatorMeasuredForceCountThreshold);
+}
+void SafetyController::hardpointActuatorAirPressure(int actuatorDataIndex, bool conditionFlag) {
+	this->hardpointActuatorAirPressureData[actuatorDataIndex].pop_front();
+	this->hardpointActuatorAirPressureData[actuatorDataIndex].push_back(conditionFlag ? 1 : 0);
+	int sum = 0;
+	for(std::list<int>::iterator i = this->hardpointActuatorAirPressureData[actuatorDataIndex].begin(); i != this->hardpointActuatorAirPressureData[actuatorDataIndex].end(); ++i) {
+		sum += (*i);
+	}
+	this->updateOverride(FaultCodes::HardpointActuatorAirPressure, this->safetyControllerSettings->ILC.FaultOnAirPressure, sum >= this->safetyControllerSettings->ILC.AirPressureCountThreshold);
 }
 
 States::Type SafetyController::checkSafety(States::Type preferredNextState) {

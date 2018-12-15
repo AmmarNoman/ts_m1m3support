@@ -4,13 +4,49 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
-../src/LSST/M1M3/SS/ForceController/ForceController.cpp 
+../src/LSST/M1M3/SS/ForceController/AberrationForceComponent.cpp \
+../src/LSST/M1M3/SS/ForceController/AccelerationForceComponent.cpp \
+../src/LSST/M1M3/SS/ForceController/ActiveOpticForceComponent.cpp \
+../src/LSST/M1M3/SS/ForceController/AzimuthForceComponent.cpp \
+../src/LSST/M1M3/SS/ForceController/BalanceForceComponent.cpp \
+../src/LSST/M1M3/SS/ForceController/ElevationForceComponent.cpp \
+../src/LSST/M1M3/SS/ForceController/FinalForceComponent.cpp \
+../src/LSST/M1M3/SS/ForceController/ForceComponent.cpp \
+../src/LSST/M1M3/SS/ForceController/ForceController.cpp \
+../src/LSST/M1M3/SS/ForceController/OffsetForceComponent.cpp \
+../src/LSST/M1M3/SS/ForceController/StaticForceComponent.cpp \
+../src/LSST/M1M3/SS/ForceController/ThermalForceComponent.cpp \
+../src/LSST/M1M3/SS/ForceController/VelocityForceComponent.cpp 
 
 OBJS += \
-./src/LSST/M1M3/SS/ForceController/ForceController.o 
+./src/LSST/M1M3/SS/ForceController/AberrationForceComponent.o \
+./src/LSST/M1M3/SS/ForceController/AccelerationForceComponent.o \
+./src/LSST/M1M3/SS/ForceController/ActiveOpticForceComponent.o \
+./src/LSST/M1M3/SS/ForceController/AzimuthForceComponent.o \
+./src/LSST/M1M3/SS/ForceController/BalanceForceComponent.o \
+./src/LSST/M1M3/SS/ForceController/ElevationForceComponent.o \
+./src/LSST/M1M3/SS/ForceController/FinalForceComponent.o \
+./src/LSST/M1M3/SS/ForceController/ForceComponent.o \
+./src/LSST/M1M3/SS/ForceController/ForceController.o \
+./src/LSST/M1M3/SS/ForceController/OffsetForceComponent.o \
+./src/LSST/M1M3/SS/ForceController/StaticForceComponent.o \
+./src/LSST/M1M3/SS/ForceController/ThermalForceComponent.o \
+./src/LSST/M1M3/SS/ForceController/VelocityForceComponent.o 
 
 CPP_DEPS += \
-./src/LSST/M1M3/SS/ForceController/ForceController.d 
+./src/LSST/M1M3/SS/ForceController/AberrationForceComponent.d \
+./src/LSST/M1M3/SS/ForceController/AccelerationForceComponent.d \
+./src/LSST/M1M3/SS/ForceController/ActiveOpticForceComponent.d \
+./src/LSST/M1M3/SS/ForceController/AzimuthForceComponent.d \
+./src/LSST/M1M3/SS/ForceController/BalanceForceComponent.d \
+./src/LSST/M1M3/SS/ForceController/ElevationForceComponent.d \
+./src/LSST/M1M3/SS/ForceController/FinalForceComponent.d \
+./src/LSST/M1M3/SS/ForceController/ForceComponent.d \
+./src/LSST/M1M3/SS/ForceController/ForceController.d \
+./src/LSST/M1M3/SS/ForceController/OffsetForceComponent.d \
+./src/LSST/M1M3/SS/ForceController/StaticForceComponent.d \
+./src/LSST/M1M3/SS/ForceController/ThermalForceComponent.d \
+./src/LSST/M1M3/SS/ForceController/VelocityForceComponent.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

@@ -28,6 +28,9 @@ private:
 	m1m3_logevent_ErrorCodeC* errorCodeData;
 
 	std::list<int> ilcCommunicationTimeoutData;
+	std::list<int> forceActuatorFollowingErrorData[156];
+	std::list<int> hardpointActuatorMeasuredForceData[6];
+	std::list<int> hardpointActuatorAirPressureData[6];
 
 public:
 	SafetyController(M1M3SSPublisher* publisher, SafetyControllerSettings* safetyControllerSettings);
@@ -107,6 +110,12 @@ public:
 	void lowerOperationTimeout(bool conditionFlag);
 
 	void ilcCommunicationTimeout(bool conditionFlag);
+
+	void forceActuatorFollowingError(int actuatorDataIndex, bool conditionFlag);
+
+	void hardpointActuatorLoadCellError(bool conditionFlag);
+	void hardpointActuatorMeasuredForce(int actuatorDataIndex, bool conditionFlag);
+	void hardpointActuatorAirPressure(int actuatorDataIndex, bool conditionFlag);
 
 	States::Type checkSafety(States::Type preferredNextState);
 

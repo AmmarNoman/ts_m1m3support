@@ -111,6 +111,8 @@ private:
 
 	void checkForceActuatorMeasuredForce(ILCMap map);
 	void checkForceActuatorFollowingError(ILCMap map);
+	void checkHardpointActuatorMeasuredForce(int32_t actuatorId);
+	void checkHardpointActuatorAirPressure(int32_t actuatorId);
 
 	void publishForceActuatorForceWarning();
 
