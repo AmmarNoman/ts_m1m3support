@@ -20,6 +20,7 @@
 #include <cmath>
 #include <cstring>
 #include <Log.h>
+#include <ccpp_sal_m1m3.h> // Provides access to enumerations
 
 namespace LSST {
 namespace M1M3 {
@@ -49,6 +50,8 @@ ILCResponseParser::ILCResponseParser() {
 	this->outerLoopData = 0;
 	this->modbusResponse = 0;
 	this->grabResponse = false;
+	this->detailedState = 0;
+	this->summaryState = 0;
 }
 
 ILCResponseParser::ILCResponseParser(ForceActuatorSettings* forceActuatorSettings, HardpointActuatorSettings* hardpointActuatorSettings, M1M3SSPublisher* publisher, ILCSubnetData* subnetData, SafetyController* safetyController) {
@@ -76,6 +79,8 @@ ILCResponseParser::ILCResponseParser(ForceActuatorSettings* forceActuatorSetting
 	this->outerLoopData = this->publisher->getOuterLoopData();
 	this->modbusResponse = this->publisher->getEventModbusResponse();
 	this->grabResponse = false;
+	this->detailedState = this->publisher->getEventDetailedState();
+	this->summaryState = this->publisher->getEventSummaryState();
 
 	this->forceWarning->Timestamp = 0;
 	this->forceWarning->AnyWarning = false;
@@ -979,22 +984,34 @@ void ILCResponseParser::checkHardpointActuatorMeasuredForce(int32_t actuatorId) 
 	bool loadCellError = measuredForce > loadCellMax || measuredForce < loadCellMin;
 	this->safetyController->hardpointActuatorLoadCellError(loadCellError);
 
-	float max = this->hardpointActuatorSettings->HardpointMeasuredForceWarningHigh;
-	float min = this->hardpointActuatorSettings->HardpointMeasuredForceWarningLow;
-	if (this->forceActuatorState->BalanceForcesApplied) {
-		max = this->hardpointActuatorSettings->HardpointMeasuredForceFSBWarningHigh;
-		min = this->hardpointActuatorSettings->HardpointMeasuredForceFSBWarningLow;
+	if (this->detailedState->DetailedState == m1m3::m1m3_shared_DetailedStates_ActiveEngineeringState ||
+			this->detailedState->DetailedState  == m1m3::m1m3_shared_DetailedStates_ActiveState) {
+		float max = this->hardpointActuatorSettings->HardpointMeasuredForceWarningHigh;
+		float min = this->hardpointActuatorSettings->HardpointMeasuredForceWarningLow;
+		if (this->forceActuatorState->BalanceForcesApplied) {
+			max = this->hardpointActuatorSettings->HardpointMeasuredForceFSBWarningHigh;
+			min = this->hardpointActuatorSettings->HardpointMeasuredForceFSBWarningLow;
+		}
+		bool measuredForceError = measuredForce > max || measuredForce < min;
+		this->safetyController->hardpointActuatorMeasuredForce(actuatorId, measuredForceError);
 	}
-	bool measuredForceError = measuredForce > max || measuredForce < min;
-	this->safetyController->hardpointActuatorMeasuredForce(actuatorId, measuredForceError);
+	else {
+		this->safetyController->hardpointActuatorMeasuredForce(actuatorId, false);
+	}
 }
 
 void ILCResponseParser::checkHardpointActuatorAirPressure(int32_t actuatorId) {
 	float airPressure = this->hardpointMonitorData->BreakawayPressure[actuatorId];
-	float min = this->hardpointActuatorSettings->AirPressureWarningHigh;
-	float max = this->hardpointActuatorSettings->AirPressureWarningLow;
+	float min = this->hardpointActuatorSettings->AirPressureWarningLow;
+	float max = this->hardpointActuatorSettings->AirPressureWarningHigh;
 	bool loadCellError = airPressure > max || airPressure < min;
-	this->safetyController->hardpointActuatorAirPressure(actuatorId, loadCellError);
+	if (this->detailedState->DetailedState == m1m3::m1m3_shared_DetailedStates_ActiveEngineeringState ||
+			this->detailedState->DetailedState  == m1m3::m1m3_shared_DetailedStates_ActiveState) {
+		this->safetyController->hardpointActuatorAirPressure(actuatorId, loadCellError);
+	}
+	else {
+		this->safetyController->hardpointActuatorAirPressure(actuatorId, false);
+	}
 }
 
 void ILCResponseParser::publishForceActuatorForceWarning() {

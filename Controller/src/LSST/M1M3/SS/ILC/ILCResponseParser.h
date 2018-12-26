@@ -35,6 +35,9 @@ private:
 	int32_t hpExpectedResponses[6];
 	int32_t hmExpectedResponses[6];
 
+	m1m3_logevent_SummaryStateC* summaryState;
+	m1m3_logevent_DetailedStateC* detailedState;
+
 	m1m3_logevent_HardpointActuatorInfoC* hardpointActuatorInfo;
 	m1m3_logevent_HardpointActuatorStateC* hardpointActuatorState;
 	m1m3_logevent_HardpointActuatorWarningC* hardpointActuatorWarning;
